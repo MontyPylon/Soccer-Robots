@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -32,43 +33,36 @@ public class MultipleObjectTracking implements Const {
 	private static final Logger log = Logger.getLogger(MultipleObjectTracking.class);
     public static final int dbg = 0;
     public static final String dname = "MOBJT";
-	
 	private final boolean calibrationMode = new Boolean(PropertiesLoader.getValue("multipleObjectTracking.calibrationMode"));
-	
 	private CalibrationWindow calibrationWindow = new CalibrationWindow();
 	private NormalWindow normalWindow;
 	private JFrame frameCamera;
 	private JFrame frameThreshold;
 	private Panel panelCamera = new Panel();
 	private Panel panelThreshold = new Panel();
-	
-	// key is robotname, val = socketclient obj
-	private Map clientMap = new HashMap();
-    	
+	private Map clientMap = new HashMap();  // key is robotname, val = socketclient obj
 	double minArea = 10000000L;
 	double maxArea = 0;
-	
 	String previousCommand = null;
 	boolean drawRobot = false;
 	
 	public static void main(String[] args) {
 		MultipleObjectTracking tracker = new MultipleObjectTracking();		
 		try {
-
 			tracker.startTracking();
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("",e);
 		}
-		
 	}
 
 	public void startTracking() throws Exception {
-		
 		if (dbg>1) log.info(dname+" MultipleObjectTracking start");
 		
+		// Load OpenCV libraries
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		
+		// Create normal frame or calibration frame
 		mountFrames();
 		
 		// Matrices for image processing.
@@ -83,6 +77,7 @@ public class MultipleObjectTracking implements Const {
 		if (capture == null){
 			throw new Exception("Could not connect to camera.");
 		} else {
+			// Set resolution height and width
 			capture.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, IMAGE_RESOLUTION_WIDTH);
 			capture.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, IMAGE_RESOLUTION_HEIGHT);
 		}
@@ -90,22 +85,22 @@ public class MultipleObjectTracking implements Const {
 		// Captures one image, for starting the process.
 		try{
 			capture.read(image);
-		} catch (Exception e){
+		} catch (Exception e) {
 			throw new Exception("Could not read from camera. Maybe the URL is not correct.");
-		}	    
+		}
 		
+		// Set size of the frames
 		setFramesSizes(image);
 		initializeFrames();
 		
+		//normalWindow.enableConnectButtons();
 		// setup colornames
 		ColorName.setup();
 		
 		// setup robotnames
 		RobotName.setup();
 		
-		if(!calibrationMode) {
-			normalWindow.enableConnectButtons();
-		}
+		normalWindow.enableConnectButtons();
 		
 		// setup robots
 		List<Robot> robots = new ArrayList<Robot>();
@@ -113,18 +108,18 @@ public class MultipleObjectTracking implements Const {
 			String robotName = RobotName.names[i];
 			Robot robot = new Robot(robotName);
 			robots.add(robot);
-			
+			/**
 			SocketClient sc = new SocketClient();
-			
 			String ip = robot.getIp();
 			String port = robot.getPort();
 			Integer portNum = null;
 			try { 
 				portNum = Integer.parseInt(port); 
 			} catch (Exception e) {
-				
+			
 			}
-			//TODO REMOVE COMMENTS WHEN WANT TO CONNECT
+			**/
+			// Don't connect here for now
 			/**
 			if (ip != null && portNum != null) {
 				sc.init(ip, portNum);           
@@ -134,21 +129,12 @@ public class MultipleObjectTracking implements Const {
 				if (dbg>1) log.info(dname+" No ip/port for "+robotName);
 			}
 			**/
-			
 		}
 		
 		int frameNum = 0;
 		
 		if (capture.isOpened()) {
-			
 			while (true) {
-				
-				if(!calibrationMode) {
-					if(normalWindow.justEndedTurnTest) {
-						sleep(500);
-					}
-				}
-				
 				capture.read(image);
 				
 				if (!image.empty()) {
@@ -165,6 +151,7 @@ public class MultipleObjectTracking implements Const {
 						
 						frameNum++;
 						
+						// Create a list of colors from config file
 						ArrayList<TObject> tobjs = new ArrayList<TObject>();
 						for (int i=0; i<ColorName.names.length; i++) {
 							String colorName = ColorName.names[i];
@@ -210,7 +197,7 @@ public class MultipleObjectTracking implements Const {
 	
 	private void initializeFrames() {
 		if(!calibrationMode) {
-			//normalWindow.intializeButtons();
+			//normalWindow.enableConnectButtons();
 		}
 	}
 
@@ -227,8 +214,6 @@ public class MultipleObjectTracking implements Const {
 		return capture;
 	}
 
-	
-
 	private Mat processImage(Mat hsvImage, Scalar hsvMin, Scalar hsvMax){
 		Mat thresholdedImage = new Mat();
 		Core.inRange(hsvImage, hsvMin , hsvMax, thresholdedImage);
@@ -242,7 +227,7 @@ public class MultipleObjectTracking implements Const {
 		repaintFrames();
 	}
 
-	private void mountFrames(){
+	private void mountFrames() {
 		if (calibrationMode){
 			createTrackingFrame();
 			frameThreshold = createFrame("Threshold", panelThreshold);
@@ -315,7 +300,6 @@ public class MultipleObjectTracking implements Const {
 	
 		Imgproc.dilate(thresh, thresh, dilateElement);
 		Imgproc.dilate(thresh, thresh, dilateElement);
-		
 	}
 
 	private List<TObject> trackFilteredObject(TObject theObj, Mat threshold, Mat image) {
@@ -431,7 +415,6 @@ public class MultipleObjectTracking implements Const {
 					theObj.getColour());
 					**/
 		}
-
 	}
 	
 	void handleTrackedObjects(List<TObject> tobjs, List<Robot> robots, Mat image) {
@@ -626,6 +609,7 @@ public class MultipleObjectTracking implements Const {
 					robot.addHistory(centerPoint, angle);
 					
 					if(sc != null) {
+						
 						//TaskAvoidEdgeJeremy task = new TaskAvoidEdgeJeremy();
 						//TaskStraightLineAvoidEdge task = new TaskStraightLineAvoidEdge();
 						//TaskGoToCenter task = new TaskGoToCenter();
@@ -635,7 +619,18 @@ public class MultipleObjectTracking implements Const {
 						
 						String command = null;
 						
+				    	Iterator iter = normalWindow.buttonMetaMap.keySet().iterator();  
+				    	while (iter.hasNext()) {
+				    		String act = (String)iter.next();	
+				    		ButtonMeta bm = (ButtonMeta)normalWindow.buttonMetaMap.get(act);
+                            if (bm.pressed) {
+                            	ITask task = bm.task;
+                            	command = task.perform(robot, image);
+                            }
+				    	}
 						
+						
+						/**
 						if(normalWindow.stopProcess) {
 							command = "+000+000x";
 							if (dbg>1) log.info(dname+" Stop button is on...");
@@ -730,6 +725,7 @@ public class MultipleObjectTracking implements Const {
 								//stopProcess = true;
 							}
 						}
+						**/
 						
 						if(command != null) {
 							if((previousCommand != null && !previousCommand.equals(command)) || previousCommand == null) {

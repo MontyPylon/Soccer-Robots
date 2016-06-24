@@ -7,25 +7,22 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.WindowConstants;
 
 import org.apache.log4j.Logger;
 import org.opencv.core.Point;
@@ -95,6 +92,8 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 	int spaceBetweenObjects = 20;
 	
 	private Map clientMapNormalWindow = new HashMap(); 
+	
+	Map buttonMetaMap = new HashMap();
 
 	/**
 	 * Launch the application.
@@ -135,7 +134,45 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 		frame.getContentPane().addMouseListener(this);
 	}
 	
+	public void createButton(String name, String actionCommand, ITask task) {
+		
+		int startX = IMAGE_WIDTH + (IMAGE_BUFFER_WIDTH * 2);
+		int startY = (IMAGE_BUFFER_HEIGHT * 2) + IMAGE_HEIGHT;
+		int buttonHeight = 40;
+	    int buttonWidth = (IMAGE_WIDTH - (spaceBetweenObjects * (5 - 1))) / (5);
+		int add = spaceBetweenObjects + buttonWidth;
+	    
+		JButton jb = new JButton(name);
+		
+		ButtonMeta bm = new ButtonMeta(name, actionCommand, task);
+		bm.theJButton = jb;
+		
+		int i = buttonMetaMap.size();
+		jb.setBounds(startX + (add * i), startY, buttonWidth, buttonHeight);
+		
+		jb.setActionCommand(actionCommand);
+		jb.addActionListener(this);
+		frame.getContentPane().add(jb);
+		
+		if (!buttonMetaMap.containsKey(actionCommand)) {
+		    buttonMetaMap.put(actionCommand, bm);
+		} else {
+			System.out.println("Duplicate button !!!! "+actionCommand);
+		}
+		
+	}
+	
 	public void intializeButtons() {
+		
+		// want to create
+		/**
+		 * 
+		 * createButton("Name", "actionCommand", actionClass.class);
+		 * 
+		 * 
+		 */
+		
+		/**
 		int numberOfButtons = 5;
 		int buttonHeight = 40;
 		int i = 0;
@@ -143,13 +180,18 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 		int startX = IMAGE_WIDTH + (IMAGE_BUFFER_WIDTH * 2);
 		int startY = (IMAGE_BUFFER_HEIGHT * 2) + IMAGE_HEIGHT;
 		int add = spaceBetweenObjects + buttonWidth;
+		**/
 		
-		stop = new JButton("Stop");
-		stop.setBounds(startX, startY, buttonWidth, buttonHeight);
-		if (dbg>1) log.info(dname+" Set stop button at pos 680");
-		stop.setActionCommand("disable");
-		stop.addActionListener(this);
-		frame.getContentPane().add(stop);
+		createButton("Stop", "disable", new TaskStop());
+		createButton("Go To Center", "goCenter", new TaskGoToCenter());
+		
+//		stop = new JButton("Stop");
+//		stop.setBounds(startX, startY, buttonWidth, buttonHeight);
+//		if (dbg>1) log.info(dname+" Set stop button at pos 680");
+//		stop.setActionCommand("disable");
+//		stop.addActionListener(this);
+//		frame.getContentPane().add(stop);
+		/**
 		i++;
 		
 		resume = new JButton("Resume");
@@ -179,7 +221,7 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 		goToCenter.addActionListener(this);
 		frame.getContentPane().add(goToCenter);
 		i++;
-		
+		**/
 		connectDisconnectButtons();
 	}
 	
@@ -350,6 +392,18 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		
+		Iterator iter = buttonMetaMap.keySet().iterator();
+    	while (iter.hasNext()) {
+    		String act = (String)iter.next();	
+    		ButtonMeta bm = (ButtonMeta)buttonMetaMap.get(act);
+	    	if (act.equals(e.getActionCommand())) {
+		    	bm.pressed = true;
+	    	} else {
+	    		bm.pressed = false;
+	    	}
+    	}
+    	/**
 	    if("disable".equals(e.getActionCommand())) {
 	        //Stop all processes
 	    	if (dbg>1) log.info(dname+" STOP BUTTON ALL PROCESSES PRESSED");
@@ -358,6 +412,7 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 	    	turnToCenterBool = false;
 	    	turnTestBool = false;
 	    	goToCenterBool = false;
+	    	
 	    } else if("enable".equals(e.getActionCommand())) {
 	    	if (dbg>1) log.info(dname+" RESUME BUTTON ALL PROCESSES PRESSED");
 	    	stopProcess = false;
@@ -377,6 +432,8 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 	    	}
 	    	goToCenterBool = true;
 	    }
+	    
+	    **/
 	    
 	    if("connect1".equals(e.getActionCommand())) {
 	    	System.out.println("connect1");
@@ -1046,4 +1103,6 @@ public class NormalWindow implements ActionListener, Const, MouseListener {
 
 	@Override
 	public void mouseReleased(MouseEvent e) {}
+	
+
 }

@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
-public class TaskGoToCenter implements Const {
+public class TaskGoToCenter implements ITask, Const {
 	
 	Logger log = Logger.getLogger(TaskGoToCenter.class);
     public static final int dbg = 4;
