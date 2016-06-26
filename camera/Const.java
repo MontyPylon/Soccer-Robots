@@ -11,16 +11,16 @@ public interface Const {
 	Dimension screen = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
 	
 	// Webcam image properties
-	public static final double imageRatio = 16 / 9d;
+	public static final double IMAGE_RATIO = 16 / 9d;
 	public static final int IMAGE_RESOLUTION_WIDTH = 640;
 	public static final int IMAGE_RESOLUTION_HEIGHT = 360;
 	public static final int IMAGE_BUFFER_WIDTH = 20;
 	public static final int IMAGE_BUFFER_HEIGHT = 20;
 	
 	// Frame properties
-	public static final double widthRatio = .8d;
-	public static final int FRAME_WIDTH = (int) (screen.width * widthRatio);
-	public static final int FRAME_HEIGHT = (int) (FRAME_WIDTH / imageRatio);
+	public static final double WIDTH_RATIO = .8d;
+	public static final int FRAME_WIDTH = (int) (screen.width * WIDTH_RATIO);
+	public static final int FRAME_HEIGHT = (int) (FRAME_WIDTH / IMAGE_RATIO);
 	
 	// Red square ratios for field:
 	public static final double xR = 0.13286713286713286d;

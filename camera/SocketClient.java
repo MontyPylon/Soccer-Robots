@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 public class SocketClient {
 	
 	Logger log = Logger.getLogger(SocketClient.class);
-    public static final int dbg = 2;
+    public static final int dbg = 0;
     public static final String dname = "SOCCL";
 	
 	Socket clientSocket;
@@ -21,16 +21,16 @@ public class SocketClient {
         //sc.test1();
 	}
 	
-	public void init(String ip, int port) {
+	public boolean init(String ip, int port) {
 		try {
 			clientSocket = new Socket(ip, port);
 			os = new DataOutputStream(clientSocket.getOutputStream());
 			is = new DataInputStream(clientSocket.getInputStream());
- 			
+ 			return true;
 		} catch (Exception e) {
-			log.error("",e);
+			if(dbg > 0) log.error("",e);
+			return false;
 		} 
-		
 	}
 	
 	public void sendAction(String s) {

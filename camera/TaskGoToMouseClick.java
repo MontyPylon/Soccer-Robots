@@ -4,16 +4,13 @@ import org.apache.log4j.Logger;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
-public class TaskGoToCenter implements ITask, Const {
+public class TaskGoToMouseClick implements ITask, Const {
 	
-	Logger log = Logger.getLogger(TaskGoToCenter.class);
+	Logger log = Logger.getLogger(TaskGoToMouseClick.class);
     public static final int dbg = 4;
-    public static final String dname = "TGOTC";
-    
-    public static final String AAAAA = " !!!!!!!! ";
+    public static final String dname = "TGOTM";
 	
 	final int buffer = 30;
-	double angleBuffer = 10;
 	
 	double leftPower = 0.0;
 	double rightPower = 0.0;
@@ -21,12 +18,14 @@ public class TaskGoToCenter implements ITask, Const {
 	//speed to go forward at
 	double forwardPower = 20;
 	double correction = 0.5;
-
+	
+	//double xD = NormalWindow.mouseX;
+	//double yD = NormalWindow.mouseY;
+	boolean doneTurning = false;
+	double angleBuffer = 10;
 	//speed to turn at
 	double turningPower = 30;
 	double angleSpeedCheck = 0.1;
-	
-	boolean doneTurning = false;
 	
 	String commandToSend;
 	String previousCommand;
@@ -120,15 +119,26 @@ public class TaskGoToCenter implements ITask, Const {
                     " as="+Util.printDouble(angleSpeed));
 
 			// PERFORM MAIN CODE HERE
-			double desiredAngle = findDesiredAngle(x0, y0, a0);
+			
+			double xD = NormalWindow.mouseX;
+			double yD = NormalWindow.mouseY;
+			
+			double desiredAngle = findDesiredAngle(x0, y0, xD, yD, a0);
 			if(!doneTurning) {
 				closeGapAngularVelocity(a0, desiredAngle, angleDiff, timeDiff, 150, robot);
 			} else {
-				goToCenter(x0, y0, a0, desiredAngle, robot);
+				goToPoint(x0, y0, xD, yD, a0, desiredAngle, robot);
 			}
 			commandToSend = formatCommand();
 			if(dbg>1) log.info(dname + " final command going forwards: " + commandToSend);
 			return commandToSend;
+			
+			//double desiredAngle = findDesiredAngle(x0, y0, xD, yD, a0);
+			//goToPoint(x0, y0, xD, yD, a0, desiredAngle, robot);
+			//commandToSend = formatCommand();
+			//if(dbg>1) log.info(dname + " final command going forwards: " + commandToSend);
+			//return commandToSend;
+			//return "+000+000x";
 			
 			
 		} catch (Exception e) {
@@ -136,7 +146,7 @@ public class TaskGoToCenter implements ITask, Const {
 		}
 		return "error";
 	}
- 	
+
  	private void closeGapAngularVelocity(double angle, double desiredAngle, double angleDiff, double timeDiff, int milliSecondDelay, Robot robot) {
 		
 		//Check overlaps in case 359 and 1 are compared
@@ -244,8 +254,8 @@ public class TaskGoToCenter implements ITask, Const {
 			}
 		}
 	}
-
-	private void turnLeft() {
+ 	
+ 	private void turnLeft() {
 		leftPower = -turningPower;
 		rightPower = turningPower;
 	}
@@ -254,32 +264,61 @@ public class TaskGoToCenter implements ITask, Const {
 		leftPower = turningPower;
 		rightPower = -turningPower;
 	}
-
-	private void goToCenter(double x, double y, double angle, double desiredAngle, Robot robot) {
-		double xMinBuffer = CENTER_X - buffer;
-		double xMaxBuffer = CENTER_X + buffer;
-		double yMinBuffer = CENTER_Y - buffer;
-		double yMaxBuffer = CENTER_Y + buffer;
+ 	
+	private void goToPoint(double x, double y, double desiredX, double desiredY, double currentAngle, double desiredAngle, Robot robot) {
 		
-		//slightly to the left of straight path
-		double diff = angle - desiredAngle;
+		if(dbg>1) log.info(dname + " Desired x: " + desiredX + ", desired y: " + desiredY);
+		
+		double xMinBuffer = desiredX - buffer;
+		double xMaxBuffer = desiredX + buffer;
+		double yMinBuffer = desiredY - buffer;
+		double yMaxBuffer = desiredY + buffer;
+		
+		double leftAnswer = 0;
+		double rightAnswer = 0;
+		// Find out if going left or right is shorter
+		if(currentAngle > desiredAngle) {
+			leftAnswer = Math.abs(currentAngle - desiredAngle);
+			rightAnswer = Math.abs(360 - (currentAngle - desiredAngle));
+		} else if(currentAngle < desiredAngle) {
+			leftAnswer = Math.abs((desiredAngle - 360) - currentAngle);
+			rightAnswer = Math.abs(desiredAngle - currentAngle);
+		}
+		
+		
+		double diff = currentAngle - desiredAngle;
+		boolean left = false;
+		
+		if(leftAnswer < rightAnswer) {
+			// left is shorter
+			left = true;
+			diff = leftAnswer;
+		} else if(rightAnswer < leftAnswer) {
+			// right is shorter
+			diff = rightAnswer;
+		}
+		
 		double correctionPower = Math.abs(diff) * correction;
-		
 		if(correctionPower > 40) {
 			correctionPower = 40;
 		}
 		
-		if(angle > desiredAngle) {
+		if(currentAngle == desiredAngle) {
+			// we are directly on the angle, go straight
+			leftPower = forwardPower;
+			rightPower = forwardPower;
+			if(dbg>1) log.info(dname + " Go stright, angle: " + currentAngle + ", desiredAngle: " + desiredAngle);
+		} else if(left) {
 			//slightly to the right of straight path, so go left to correct
 			leftPower = forwardPower - correctionPower;
 			rightPower = forwardPower + correctionPower;
-			if(dbg>1) log.info(dname + " Go left a little, angle: " + angle + ", desiredAngle: " + desiredAngle);
+			if(dbg>1) log.info(dname + " Go left a little, angle: " + currentAngle + ", desiredAngle: " + desiredAngle);
 			if(dbg>1) log.info(dname + " Correction: " + correctionPower + ", Left Power: " + leftPower + ", Right Power: " + rightPower);
-		} else if(angle < desiredAngle) {
+		} else if(!left) {
 			//slightly to the left of straight path, so go right to correct
 			leftPower = forwardPower + correctionPower;
 			rightPower = forwardPower - correctionPower;
-			if(dbg>1) log.info(dname + " Go left a little, angle: " + angle + ", desiredAngle: " + desiredAngle);
+			if(dbg>1) log.info(dname + " Go left a little, angle: " + currentAngle + ", desiredAngle: " + desiredAngle);
 			if(dbg>1) log.info(dname + " Correction: " + correctionPower + ", Left Power: " + leftPower + ", Right Power: " + rightPower);
 		}
 		
@@ -358,23 +397,23 @@ public class TaskGoToCenter implements ITask, Const {
 		return finalCommand;
 	}
 
-	private double findDesiredAngle(double xPos, double yPos, double curAngle) {
+	private double findDesiredAngle(double xPos, double yPos, double desiredX, double desiredY, double curAngle) {
 		
-		double xDiff = xPos - CENTER_X;
-		double yDiff = yPos - CENTER_Y;
+		double xDiff = xPos - desiredX;
+		double yDiff = yPos - desiredY;
 		double yOverX = yDiff / xDiff;
 		double radAngle = Math.atan(yOverX);
 		double trueAngle = Math.toDegrees(radAngle);
 		
-		if(yPos < CENTER_Y && xPos > CENTER_X) {
+		if(yPos < desiredY && xPos > desiredX) {
 			//Quadrant I
 			trueAngle += 360;
 			if (dbg>1) log.info(dname+" QUAD I");
-		} else if(yPos > CENTER_Y && xPos < CENTER_X) {
+		} else if(yPos > desiredY && xPos < desiredX) {
 			//Quadrant III
 			trueAngle += 180;
 			if (dbg>1) log.info(dname+" QUAD III");
-		} else if(yPos < CENTER_Y && xPos < CENTER_X) {
+		} else if(yPos < desiredY && xPos < desiredX) {
 			//Quadrant II
 			trueAngle += 180;
 			if (dbg>1) log.info(dname+" QUAD II");

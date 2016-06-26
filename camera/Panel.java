@@ -45,7 +45,7 @@ public class Panel extends JPanel implements Const {
         		g.drawImage(image, 10, 10, IMAGE_WIDTH, IMAGE_HEIGHT, this);
         	} else {
         		g.drawImage(image, IMAGE_BUFFER_WIDTH, IMAGE_BUFFER_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGHT, this);
-        		w.drawComponents(g);
+        		w.drawWindowComponents(g);
         	}
         }
         
