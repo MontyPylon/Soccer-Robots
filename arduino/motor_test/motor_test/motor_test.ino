@@ -1,7 +1,7 @@
-int rightB = 5; //5
-int rightF = 3; //3
-int leftF = 9; //9
-int leftB = 6; //6
+int rightB = 3; //5
+int rightF = 5; //3
+int leftF = 6; //9
+int leftB = 9; //6
 int keepBall = 7;
 int releaseBall = 8;
 
@@ -11,11 +11,17 @@ void setup() {
   pinMode(leftB, OUTPUT);
   pinMode(rightF, OUTPUT);
   pinMode(rightB, OUTPUT);
-  pinMode(keepBall, OUTPUT);
-  pinMode(releaseBall, OUTPUT);
+  //pinMode(keepBall, OUTPUT);
+  //pinMode(releaseBall, OUTPUT);
 }
 
 void loop() {
+
+  digitalWrite(rightF, LOW);
+  digitalWrite(leftF, LOW);
+  digitalWrite(rightB, LOW);
+  digitalWrite(leftB, LOW);
+  
   digitalWrite(rightF, HIGH);
   delay(2000);
   digitalWrite(rightF, LOW);
@@ -35,7 +41,7 @@ void loop() {
   delay(2000);
   digitalWrite(leftB, LOW);
   delay(2000);
-
+  /**
   digitalWrite(keepBall, HIGH);  
   delay(2000);
   digitalWrite(keepBall, LOW);
@@ -45,4 +51,5 @@ void loop() {
   delay(2000);
   digitalWrite(releaseBall, LOW);
   delay(2000);
+  **/
 }
